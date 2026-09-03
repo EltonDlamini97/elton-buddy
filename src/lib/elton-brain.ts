@@ -67,7 +67,7 @@ const clamp = (n: number) => Math.max(0, Math.min(100, n));
 
 export interface BrainResult {
   reply: string;
-  tool?: string;
+  tool?: string | undefined;
   state: SystemState;
   memory: Memory;
 }
@@ -75,7 +75,7 @@ export interface BrainResult {
 export function think(input: string, state: SystemState, memory: Memory): BrainResult {
   const raw = input.trim();
   const t = raw.toLowerCase().replace(/^(hey |ok |okay )?elton[,!.]?\s*/, "");
-  const name = memory.facts.name;
+  const name = memory.facts["name"];
   const s: SystemState = { ...state, openApps: [...state.openApps] };
   const m: Memory = { ...memory, facts: { ...memory.facts } };
   const done = (reply: string, tool?: string): BrainResult => ({ reply, tool, state: s, memory: m });
@@ -83,14 +83,16 @@ export function think(input: string, state: SystemState, memory: Memory): BrainR
   // --- memory: remember / recall ---
   let mm = t.match(/my name is (\w+)/) || t.match(/call me (\w+)/);
   if (mm) {
-    m.facts.name = mm[1][0].toUpperCase() + mm[1].slice(1);
-    return done(`Nice to meet you, ${m.facts.name}. I'll remember that.`, "memory.store");
+    const n = mm[1] ?? "";
+    m.facts["name"] = n.charAt(0).toUpperCase() + n.slice(1);
+    return done(`Nice to meet you, ${m.facts["name"]}. I'll remember that.`, "memory.store");
   }
   mm = t.match(/remember (?:that )?(.+)/);
   if (mm) {
     const key = `note_${Object.keys(m.facts).length + 1}`;
-    m.facts[key] = mm[1];
-    return done(`Noted. I'll remember that ${mm[1]}.`, "memory.store");
+    const note = mm[1] ?? "";
+    m.facts[key] = note;
+    return done(`Noted. I'll remember that ${note}.`, "memory.store");
   }
   if (/what(?:'s| is) my name/.test(t)) {
     return name
@@ -109,15 +111,17 @@ export function think(input: string, state: SystemState, memory: Memory): BrainR
   // --- apps ---
   mm = t.match(/(?:open|launch|start|run) (?:up )?(?:the )?([\w .]+?)(?: for me| please)?$/);
   if (mm) {
-    const key = Object.keys(APPS).find((k) => mm![1].includes(k));
-    const app = key ? APPS[key] : mm[1].replace(/\b\w/g, (c) => c.toUpperCase());
+    const target = mm[1] ?? "";
+    const key = Object.keys(APPS).find((k) => target.includes(k));
+    const app = (key && APPS[key]) || target.replace(/\b\w/g, (c) => c.toUpperCase());
     if (!s.openApps.includes(app)) s.openApps.push(app);
     return done(`Opening ${app} now.`, `os.open_app("${app}")`);
   }
   mm = t.match(/(?:close|quit|kill|exit) (?:the )?([\w .]+?)(?: for me| please)?$/);
   if (mm) {
-    const key = Object.keys(APPS).find((k) => mm![1].includes(k));
-    const app = key ? APPS[key] : mm[1];
+    const target = mm[1] ?? "";
+    const key = Object.keys(APPS).find((k) => target.includes(k));
+    const app = (key && APPS[key]) || target;
     const idx = s.openApps.findIndex((a) => a.toLowerCase() === app.toLowerCase());
     if (idx === -1) return done(`${app} isn't running right now.`, "os.close_app");
     s.openApps.splice(idx, 1);
@@ -137,7 +141,7 @@ export function think(input: string, state: SystemState, memory: Memory): BrainR
 
   // --- volume ---
   mm = t.match(/(?:set )?volume (?:to )?(\d+)/);
-  if (mm) { s.volume = clamp(+mm[1]); return done(`Volume set to ${s.volume} percent.`, `os.set_volume(${s.volume})`); }
+  if (mm) { s.volume = clamp(Number(mm[1])); return done(`Volume set to ${s.volume} percent.`, `os.set_volume(${s.volume})`); }
   if (/(turn|volume) (it )?up|louder|increase (the )?volume/.test(t)) { s.volume = clamp(s.volume + 10); return done(`Volume up to ${s.volume}.`, `os.set_volume(${s.volume})`); }
   if (/(turn|volume) (it )?down|quieter|lower (the )?volume|decrease (the )?volume/.test(t)) { s.volume = clamp(s.volume - 10); return done(`Volume down to ${s.volume}.`, `os.set_volume(${s.volume})`); }
   if (/\bmute\b/.test(t)) { s.volume = 0; return done("Muted.", "os.set_volume(0)"); }
@@ -145,16 +149,16 @@ export function think(input: string, state: SystemState, memory: Memory): BrainR
 
   // --- brightness ---
   mm = t.match(/brightness (?:to )?(\d+)/);
-  if (mm) { s.brightness = clamp(+mm[1]); return done(`Brightness set to ${s.brightness} percent.`, `os.set_brightness(${s.brightness})`); }
+  if (mm) { s.brightness = clamp(Number(mm[1])); return done(`Brightness set to ${s.brightness} percent.`, `os.set_brightness(${s.brightness})`); }
   if (/brighter|brightness up|increase (the )?brightness/.test(t)) { s.brightness = clamp(s.brightness + 15); return done(`Brightness up to ${s.brightness}.`, `os.set_brightness(${s.brightness})`); }
   if (/dimmer|brightness down|lower (the )?brightness|dim (the )?screen/.test(t)) { s.brightness = clamp(s.brightness - 15); return done(`Dimmed to ${s.brightness}.`, `os.set_brightness(${s.brightness})`); }
 
   // --- toggles ---
   mm = t.match(/(?:turn |switch )?(on|off|enable|disable) (?:the )?(wi-?fi|bluetooth|dark mode)/) || t.match(/(?:turn |switch )?(wi-?fi|bluetooth|dark mode) (on|off)/);
   if (mm) {
-    const words = [mm[1], mm[2]];
+    const words = [mm[1] ?? "", mm[2] ?? ""];
     const on = words.some((w) => /^(on|enable)$/.test(w));
-    const which = words.find((w) => /wi|blue|dark/.test(w))!;
+    const which = words.find((w) => /wi|blue|dark/.test(w)) ?? "wifi";
     const key = which.startsWith("wi") ? "wifi" : which.startsWith("blue") ? "bluetooth" : "darkMode";
     s[key] = on;
     const label = key === "wifi" ? "Wi-Fi" : key === "bluetooth" ? "Bluetooth" : "Dark mode";
