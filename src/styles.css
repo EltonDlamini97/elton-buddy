@@ -62,26 +62,26 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --radius: 0.75rem;
+  --background: oklch(0.13 0.025 250);
+  --foreground: oklch(0.95 0.01 220);
+  --card: oklch(0.17 0.028 250);
+  --card-foreground: oklch(0.95 0.01 220);
+  --popover: oklch(0.17 0.028 250);
+  --popover-foreground: oklch(0.95 0.01 220);
+  --primary: oklch(0.82 0.15 200);
+  --primary-foreground: oklch(0.15 0.03 250);
+  --secondary: oklch(0.24 0.03 250);
+  --secondary-foreground: oklch(0.95 0.01 220);
+  --muted: oklch(0.22 0.028 250);
+  --muted-foreground: oklch(0.65 0.03 230);
+  --accent: oklch(0.26 0.05 210);
+  --accent-foreground: oklch(0.92 0.08 200);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.82 0.15 200 / 18%);
+  --input: oklch(0.82 0.15 200 / 20%);
+  --ring: oklch(0.82 0.15 200);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -141,4 +141,21 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+@keyframes elton-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+@keyframes elton-spin { to { transform: rotate(360deg); } }
+.elton-orb-ring { animation: elton-spin 12s linear infinite; }
+.elton-orb-ring-rev { animation: elton-spin 18s linear infinite reverse; }
+.elton-orb-core { animation: elton-pulse 2.4s ease-in-out infinite; }
+.elton-orb-core.active { animation-duration: 0.9s; }
+.elton-grid {
+  background-image:
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
 }
