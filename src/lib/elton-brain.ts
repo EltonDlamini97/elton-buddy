@@ -8,7 +8,7 @@ export interface Message {
   role: Role;
   text: string;
   at: number;
-  tool?: string;
+  tool?: string | undefined;
 }
 
 export interface SystemState {
